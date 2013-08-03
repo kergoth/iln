@@ -16,6 +16,7 @@ help () {
     echo >&2 "  -b  Create backups of files when overwriting (-f or -i specified). If neither -f nor -i are specified, create backups of the links to be created."
     echo >&2 "  -i  Interactive mode. If the destination exists, prompt to overwrite. If the target_file exists, but the source_file does not, prompt to move target_file to source_file and link it back. (The -i option overrides any previous -f or -M options.)"
     echo >&2 "  -M  Default to moving and linking back when appropriate (analagous to -f. If -i and -M are specified, prompt for overwrite but not for move)."
+    echo >&2 "  -r  Convert absolute paths to relative paths when creating symbolic links."
     echo >&2 "  -v  Increase verbosity: display the work being done."
     echo >&2 "  -h  Show this help and usage information."
     exit 2
@@ -102,6 +103,60 @@ get_backup_path () {
     printf "$pattern" "$1" "$2"
 }
 
+relpath () {
+    # http://stackoverflow.com/questions/2564634/bash-convert-absolute-path-into-relative-path-given-a-current-directory
+    #
+    # both $1 and $2 are absolute paths
+    # returns $2 relative to $1
+
+    if [ $# -ne 2 ]; then
+        echo >&2 "Usage: relpath TO FROM"
+        echo >&2
+        echo >&2 "Returns FROM relative to TO"
+        exit 2
+    fi
+
+    source="$1"
+    target="$2"
+
+    common_part="$source"
+    back=
+    while [ -n "$common_part" -a "${target#$common_part}" = "${target}" ]; do
+      common_part="${common_part%/*}"
+      back="../${back}"
+    done
+
+    if [ -z "$common_part" ]; then
+        # nothing in common, keep absolute
+        back="/"
+    fi
+
+    echo ${back}${target#$common_part/}
+}
+
+abspath () {
+    _path="$1"
+    if [ -n "${_path##/*}" ]; then
+        _path="$PWD/$1"
+    fi
+    echo "$_path"
+}
+
+normalize_path()
+{
+    # Attempt to normalize the specified path, removing . and ..
+
+    # Remove all /./ sequences.
+    local path="${1//\/.\//\/}"
+
+    # Remove dir/.. sequences.
+    while [[ $path =~ ([^/][^/]*/\.\./) ]]
+    do
+        path="${path/${BASH_REMATCH[0]}/}"
+    done
+    echo "$path"
+}
+
 link_file () {
     link_source="$1"
     link_target="$2"
@@ -150,10 +205,26 @@ link_file () {
 }
 
 ln () {
+    source="$1"
+    target="$2"
+
+    if [ $relative -eq 1 ]; then
+        source="$(abspath "$1")"
+        target="$(abspath "$target")"
+        targetdir="${target%/*}"
+        source="$(relpath "$targetdir" "$source")"
+
+        # Sanity check
+        resolved_path="$(normalize_path "$targetdir/$source")"
+        if [ ! -e "$resolved_path" ]; then
+            echo >&2 "Error: $resolved_path does not exist"
+            return 1
+        fi
+    fi
+
     old_saved="$saved"
-    for arg; do
-        save "$arg"
-    done
+    save "$source"
+    save "$target"
     eval set -- "$saved"
     saved="$old_saved"
 
@@ -167,13 +238,18 @@ backup=0
 force=0
 symlink=0
 verbose=0
+relative=0
 move=0
-while getopts fsLPMibvh opt; do
+while getopts fsLPMribvh opt; do
     case "$opt" in
         i)
             interactive=1
             force=0
             move=0
+            continue
+            ;;
+        r)
+            relative=1
             continue
             ;;
         M)
@@ -203,6 +279,9 @@ while getopts fsLPMibvh opt; do
 done
 if [ $move -eq 1 ] && [ $force -eq 1 ]; then
     interactive=0
+fi
+if [ $relative -eq 1 ] && [ $symlink -eq 0 ]; then
+    echo >&2 "Warning: -r (relative) has no effect without -s (symlink)."
 fi
 shift $(($OPTIND - 1))
 
