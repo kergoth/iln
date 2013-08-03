@@ -1,7 +1,20 @@
 iln
 ===
 
-interactive ln: ln with enhanced interactive mode and support for creation of backups
+interactive ln: ln with additional features and interactive mode
+
+Key features
+------------
+
+- Allow creation of backups when overwriting, or backup the new link when not.
+  This behaves similarly to how package managers treat config files.
+- Allow moving the target to the source if the target exists but the source isn't.
+- Enhanced interactive mode to prompt both for overwriting, and for
+  move-and-link-back.
+- Add argument to convert absolute symbolic link paths to relative.
+
+Usage
+-----
 
 ```
 iln [-fsMibvh] [-L|-P] source_file target_file
@@ -28,6 +41,14 @@ iln options:
   -r  Convert absolute paths to relative paths when creating symbolic links.
   -v  Increase verbosity: display the work being done.
   -h  Show this help and usage information.
-````
+```
 
-See [TODO.md](TODO.md) for the task list.
+Installation
+------------
+
+Place the script somewhere in your PATH.
+
+TODO
+----
+
+See [TODO.md](TODO.md).
