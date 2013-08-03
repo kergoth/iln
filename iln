@@ -116,11 +116,6 @@ link_file () {
         fi
 
         if [ -e "$link_target" ] || [ -h "$link_target" ]; then
-            if [ "$link_source" -ef "$link_target" ]; then
-                msg "$link_source: Same file as $link_target"
-                return 2
-            fi
-
             if [ $force -eq 0 ]; then
                 msg "$link_target: File exists"
                 if [ $interactive -eq 0 ] || ! prompt_bool "Replace $link_target?"; then
