@@ -71,8 +71,8 @@ prompt_bool () {
     esac
 
     while true; do
-        printf "%s [%s|%s]\n" "$1" "$y_side" "$n_side"
-        read -n 1 result </dev/tty
+        read -n 1 -p "$1 [$y_side|$n_side] " result </dev/tty
+        printf "\n"
         case "$result" in
             [yY])
                 return 0
