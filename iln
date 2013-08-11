@@ -222,6 +222,10 @@ ln () {
         fi
     fi
 
+    if [ $create_leading_dirs -eq 1 ]; then
+        mkdir -p "${link_target%/*}"
+    fi
+
     old_saved="$saved"
     save "$source"
     save "$target"
@@ -240,7 +244,8 @@ symlink=0
 verbose=0
 relative=0
 move=0
-while getopts fsLPMribvh opt; do
+create_leading_dirs=0
+while getopts fsLPMDribvh opt; do
     case "$opt" in
         i)
             interactive=1
@@ -264,12 +269,16 @@ while getopts fsLPMribvh opt; do
             verbose=1
             continue
             ;;
-        s)
-            symlink=1
-            ;;
         f)
             force=1
             continue
+            ;;
+        D)
+            create_leading_dirs=1
+            continue
+            ;;
+        s)
+            symlink=1
             ;;
         \?|h)
             help
