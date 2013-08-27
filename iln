@@ -175,7 +175,7 @@ link_file () {
                 msg "$link_target: File exists"
                 if [ $interactive -eq 0 ] || ! prompt_bool "Replace $link_target?"; then
                     if [ $backup -eq 1 ]; then
-                        backup_path="$(get_backup_path "$link_target" ilnnew)"
+                        backup_path="$(get_backup_path "${link_target%/}" ilnnew)"
                         ln "$link_source" "$backup_path" && msg "wrote new link to backup path $backup_path"
                     fi
                     return 1
@@ -183,7 +183,7 @@ link_file () {
             fi
 
             if [ $backup -eq 1 ]; then
-                backup_path="$(get_backup_path "$link_target" "ilnold")"
+                backup_path="$(get_backup_path "${link_target%/}" "ilnold")"
                 mv "$link_target" "$backup_path" && msg "moved $link_target to backup path $backup_path"
                 if [ $? -ne 0 ]; then
                     return $?
